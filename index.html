@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoDaddy MCP Service Status</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; line-height: 1.6; }
+        .status { padding: 1em; margin-top: 1em; border-radius: 5px; }
+        .status.healthy { background-color: #e6ffe6; border: 1px solid #00cc00; color: #006600; }
+        .status.unhealthy { background-color: #ffe6e6; border: 1px solid #cc0000; color: #660000; }
+        pre { background-color: #f4f4f4; padding: 1em; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>GoDaddy MCP Service Status</h1>
+    <p>Checking the health endpoint at <code>/api/godaddy/health</code>...</p>
+
+    <div id="statusContainer" class="status">Loading status...</div>
+    <pre id="healthData"></pre>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusContainer = document.getElementById('statusContainer');
+            const healthDataPre = document.getElementById('healthData');
+
+            // IMPORTANT: Replace 'YOUR_ORGSUITE_MCP_TOKEN' with the actual token
+            // This token is required by the api/mcp.js handler for POST requests.
+            const ORGSUITE_MCP_TOKEN = 'YOUR_ORGSUITE_MCP_TOKEN'; // !!! REPLACE ME !!!
+
+            fetch('/api/mcp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${ORGSUITE_MCP_TOKEN}`
+                },
+                body: JSON.stringify({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "health",
+                    "params": []
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(`HTTP error! status: ${response.status}, body: ${text}`) });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.result) {
+                        const health = data.result;
+                        statusContainer.textContent = `Status: ${health.status.toUpperCase()} - ${health.message}`;
+                        statusContainer.className = `status ${health.status}`;
+                        healthDataPre.textContent = JSON.stringify(health, null, 2);
+                    } else {
+                        statusContainer.textContent = 'Status: ERROR - Could not parse health data.';
+                        statusContainer.className = 'status unhealthy';
+                        healthDataPre.textContent = JSON.stringify(data, null, 2);
+                    }
+                })
+                .catch(error => {
+                    statusContainer.textContent = `Status: ERROR - Failed to fetch health data: ${error.message}`;
+                    statusContainer.className = 'status unhealthy';
+                    healthDataPre.textContent = error.stack;
+                });
+        });
+    </script>
+</body>
+</html>
