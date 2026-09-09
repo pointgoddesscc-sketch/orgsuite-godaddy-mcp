@@ -1,0 +1,9 @@
+{
+  "name": "orgsuite-godaddy-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OrgSuite authenticated GoDaddy management API for psemanagement.services",
+  "engines": {
+    "node": ">=18"
+  }
+}
